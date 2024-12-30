@@ -3,3 +3,5 @@ kubectl get deployments
 kubectl get pods
 
 
+kubectl apply -f k8s-webook-service.yaml
+kubectl get services
