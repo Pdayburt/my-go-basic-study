@@ -2,7 +2,9 @@ package repository
 
 import (
 	"context"
+	"log"
 	"my-go-basic-study/webook/internal/domain"
+	"my-go-basic-study/webook/internal/repository/cache"
 	"my-go-basic-study/webook/internal/repository/dao"
 )
 
@@ -12,12 +14,14 @@ var (
 )
 
 type UserRepository struct {
-	dao *dao.UserDao
+	dao   *dao.UserDao
+	cache *cache.UserCache
 }
 
-func NewUserRepository(dao *dao.UserDao) *UserRepository {
+func NewUserRepository(dao *dao.UserDao, cache *cache.UserCache) *UserRepository {
 	return &UserRepository{
-		dao: dao,
+		dao:   dao,
+		cache: cache,
 	}
 }
 
@@ -38,5 +42,36 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (domain.
 		Email:    user.Email,
 		Password: user.Password,
 	}, nil
+
+}
+
+// FindByID
+
+func (r *UserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
+	u, err := r.cache.Get(ctx, id)
+	//缓存里 有数据
+	if err == nil {
+		return u, nil
+	}
+	/*//缓存里 没数据 去数据库加载
+	if errors.Is(err, cache.ErrKeyNotExist) {
+		return domain.User{}, err
+	}*/
+	user, err := r.dao.FindById(ctx, id)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	uR := domain.User{
+		Id:       user.Id,
+		Email:    user.Email,
+		Password: user.Password,
+	}
+	err = r.cache.Set(ctx, uR)
+	if err != nil {
+		log.Println(err)
+	}
+
+	return uR, nil
 
 }

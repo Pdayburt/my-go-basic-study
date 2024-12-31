@@ -2,7 +2,6 @@ package web
 
 import (
 	"errors"
-	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -196,8 +195,7 @@ func (u *UserHandler) ProfileJWT(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "系统错误～～")
 		return
 	}
-	fmt.Println(claims.Uid)
-	ctx.String(http.StatusOK, "这是你的profile")
+	ctx.String(http.StatusOK, "这是你的profile,you ID", claims.Uid)
 }
 func (u *UserHandler) Logout(ctx *gin.Context) {
 	sess := sessions.Default(ctx)
