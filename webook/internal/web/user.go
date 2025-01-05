@@ -12,13 +12,15 @@ import (
 	"net/http"
 )
 
+var _ handler = &UserHandler{}
+
 type UserHandler struct {
-	svc                *service.UserService
+	svc                service.UserService
 	emailExpression    *regexp.Regexp
 	passwordExpression *regexp.Regexp
 }
 
-func NewUserHandler(svc *service.UserService) *UserHandler {
+func NewUserHandler(svc service.UserService) *UserHandler {
 	const (
 		emailRegexPattern    = "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"
 		passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
@@ -177,6 +179,7 @@ func (u *UserHandler) Edit(ctx *gin.Context) {
 }
 
 func (u *UserHandler) Profile(ctx *gin.Context) {
+
 	ctx.String(http.StatusOK, "这是你的profile")
 }
 

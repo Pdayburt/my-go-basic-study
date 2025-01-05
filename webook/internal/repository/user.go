@@ -13,26 +13,32 @@ var (
 	ErrUserNotFound       = dao.ErrUserNotFound
 )
 
-type UserRepository struct {
-	dao   *dao.UserDao
-	cache *cache.UserCache
+type UserRepository interface {
+	Create(ctx context.Context, u domain.User) error
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	FindByID(ctx context.Context, id int64) (domain.User, error)
 }
 
-func NewUserRepository(dao *dao.UserDao, cache *cache.UserCache) *UserRepository {
-	return &UserRepository{
+type userRepository struct {
+	dao   dao.UserDao
+	cache cache.UserCache
+}
+
+func NewUserRepository(dao dao.UserDao, cache cache.UserCache) UserRepository {
+	return &userRepository{
 		dao:   dao,
 		cache: cache,
 	}
 }
 
-func (r *UserRepository) Create(ctx context.Context, u domain.User) error {
+func (r *userRepository) Create(ctx context.Context, u domain.User) error {
 	return r.dao.Insert(ctx, dao.User{
 		Email:    u.Email,
 		Password: u.Password,
 	})
 }
 
-func (r *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	user, err := r.dao.FindByEmail(ctx, email)
 	if err != nil {
 		return domain.User{}, err
@@ -47,7 +53,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (domain.
 
 // FindByID
 
-func (r *UserRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, id int64) (domain.User, error) {
 	u, err := r.cache.Get(ctx, id)
 	//缓存里 有数据
 	if err == nil {

@@ -1,46 +1,151 @@
 package web
 
 import (
-	"fmt"
-	"github.com/go-resty/resty/v2"
-	"golang.org/x/crypto/bcrypt"
-	"math"
+	"bytes"
+	"context"
+	"errors"
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
+	"my-go-basic-study/webook/internal/domain"
+	"my-go-basic-study/webook/internal/service"
+	svcmock "my-go-basic-study/webook/internal/service/mock"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
-func TestEncrypt(t *testing.T) {
+func TestUserHandler_Signup(t *testing.T) {
 
-	p := "123d"
-
-	password, err := bcrypt.GenerateFromPassword([]byte(p), bcrypt.DefaultCost)
-	if err != nil {
-		t.Fatal(err)
+	testCase := []struct {
+		name     string
+		mock     func(ctrl *gomock.Controller) service.UserService
+		reqBody  string
+		wantCode int
+		wantBody string
+	}{
+		{
+			name: "注册成功",
+			mock: func(ctrl *gomock.Controller) service.UserService {
+				mockUserService := svcmock.NewMockUserService(ctrl)
+				mockUserService.EXPECT().Signup(gomock.Any(), domain.User{
+					Email:    "1123@qq.com",
+					Password: "123456#qqq",
+				}).Return(nil)
+				return mockUserService
+			},
+			reqBody: `
+{
+   "email": "1123@qq.com",
+   "password": "123456#qqq",
+   "confirmPassword": "123456#qqq"
+}
+`,
+			wantCode: http.StatusOK,
+			wantBody: `signup success`,
+		},
+		{
+			name: "参数不对，bind失败",
+			mock: func(ctrl *gomock.Controller) service.UserService {
+				mockUserService := svcmock.NewMockUserService(ctrl)
+				//没有走到调用service中的signup这一步
+				/*mockUserService.EXPECT().Signup(gomock.Any(), domain.User{
+					Email:    "1123@qq.com",
+					Password: "123456#qqq",
+				}).Return(nil)*/
+				return mockUserService
+			},
+			reqBody: `
+{
+   "email": "1123@qq.com",
+   "password": "123456#qqq"
+   "confirmPassword": "123456#qqq"
+}
+`,
+			wantCode: http.StatusBadRequest,
+		},
+		{
+			name: "邮箱格式不对",
+			mock: func(ctrl *gomock.Controller) service.UserService {
+				mockUserService := svcmock.NewMockUserService(ctrl)
+				//mockUserService.EXPECT().Signup(gomock.Any(), domain.User{
+				//	Email:    "1123@qq.com",
+				//	Password: "123456#qqq",
+				//}).Return(nil)
+				return mockUserService
+			},
+			reqBody: `
+{
+   "email": "1123qq.com",
+   "password": "123456#qqq",
+   "confirmPassword": "123456#qqq"
+}
+`,
+			wantCode: http.StatusOK,
+			wantBody: `邮件格式错误`,
+		},
+		{
+			name: "邮箱已存在",
+			mock: func(ctrl *gomock.Controller) service.UserService {
+				mockUserService := svcmock.NewMockUserService(ctrl)
+				mockUserService.EXPECT().Signup(gomock.Any(), domain.User{
+					Email:    "1123@qq.com",
+					Password: "123456#qqq",
+				}).Return(service.ErrUserDuplicateEmail)
+				return mockUserService
+			},
+			reqBody: `
+{
+   "email": "1123@qq.com",
+   "password": "123456#qqq",
+   "confirmPassword": "123456#qqq"
+}
+`,
+			wantCode: http.StatusOK,
+			wantBody: `邮箱已存在`,
+		},
 	}
-	t.Log(string(password))
 
-	err = bcrypt.CompareHashAndPassword(password, []byte(p))
-	if err != nil {
-		t.Fatal(err)
+	for _, tc := range testCase {
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			userHandler := NewUserHandler(tc.mock(ctrl))
+
+			server := gin.Default()
+			userHandler.RegisterRouters(server)
+			request, err := http.NewRequest(http.MethodPost, "/users/signup",
+				bytes.NewBuffer([]byte(tc.reqBody)))
+			require.NoError(t, err)
+			request.Header.Set("Content-Type", "application/json")
+			respWriter := httptest.NewRecorder()
+			//http请求9进入gin框架的入口，也就是当调用这个方法是 Gin会处理这个请求同时将响应写回到resp中
+			server.ServeHTTP(respWriter, request)
+			assert.Equal(t, tc.wantCode, respWriter.Code)
+			assert.Equal(t, tc.wantBody, respWriter.Body.String())
+		})
 	}
+
 }
 
-func TestCeil(t *testing.T) {
-	ceil1 := math.Ceil(float64(28) / float64(50))
-	fmt.Println(ceil1)
-	ceil2 := math.Ceil(28 / 50)
-	fmt.Println(ceil2)
+func TestMock(t *testing.T) {
+	controller := gomock.NewController(t)
+	defer controller.Finish()
+	mockUserService := svcmock.NewMockUserService(controller)
+	mockUserService.EXPECT().Signup(gomock.Any(), gomock.Any()).
+		Return(errors.New("signup mock  error"))
+	err := mockUserService.Signup(context.Background(), domain.User{
+		Email:    "123@11.com",
+		Password: "123@11.com",
+	})
+	t.Log(err)
+
 }
 
-func TestQuery(t *testing.T) {
-
-	request := resty.New().SetBaseURL("https://api.xion-testnet-1.burnt.com").R()
-
-	for i := 0; i < 10; i++ {
-		response, err := request.Get("cosmos/tx/v1beta1/txs/654e331886aa24fd712ac32e4449a6c5634551a22b5c8da30ce5db61cd33f8b0")
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(response.StatusCode())
-	}
-
+func TestUserHttp_newReq(t *testing.T) {
+	/*request, err := http.NewRequest(http.MethodGet, "www.baidu.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}*/
 }

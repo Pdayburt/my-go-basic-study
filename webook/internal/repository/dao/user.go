@@ -17,18 +17,24 @@ const (
 	uniqueConflictErrNo = 1062
 )
 
-type UserDao struct {
+type UserDao interface {
+	Insert(ctx context.Context, u User) error
+	FindByEmail(ctx context.Context, email string) (User, error)
+	FindById(ctx context.Context, id int64) (User, error)
+}
+
+type userDao struct {
 	db *gorm.DB
 }
 
-func NewUserDao(db *gorm.DB) *UserDao {
+func NewUserDao(db *gorm.DB) UserDao {
 
-	return &UserDao{
+	return &userDao{
 		db: db,
 	}
 }
 
-func (dao *UserDao) Insert(ctx context.Context, u User) error {
+func (dao *userDao) Insert(ctx context.Context, u User) error {
 
 	now := time.Now().UnixMilli()
 	u.Ctime = now
@@ -42,13 +48,13 @@ func (dao *UserDao) Insert(ctx context.Context, u User) error {
 	return err
 }
 
-func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error) {
+func (dao *userDao) FindByEmail(ctx context.Context, email string) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("email = ?", email).First(&u).Error
 	return u, err
 }
 
-func (dao *UserDao) FindById(ctx context.Context, id int64) (User, error) {
+func (dao *userDao) FindById(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("id = ?", id).First(&u).Error
 	return u, err

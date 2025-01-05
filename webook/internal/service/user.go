@@ -13,17 +13,25 @@ var (
 	ErrInvalidUserOrPassword = errors.New("～～邮箱或者密码错误～～")
 )
 
-type UserService struct {
-	repo *repository.UserRepository
+type UserService interface {
+	Signup(ctx context.Context, u domain.User) error
+	Login(ctx context.Context, user domain.User) (domain.User, error)
+	Profile(ctx context.Context, id int64) (domain.User, error)
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{
+var _ UserService = (*userService)(nil)
+
+type userService struct {
+	repo repository.UserRepository
+}
+
+func NewUserService(repo repository.UserRepository) UserService {
+	return &userService{
 		repo: repo,
 	}
 }
 
-func (svc *UserService) Signup(ctx context.Context, u domain.User) error {
+func (svc *userService) Signup(ctx context.Context, u domain.User) error {
 	cryptedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -32,7 +40,7 @@ func (svc *UserService) Signup(ctx context.Context, u domain.User) error {
 	return svc.repo.Create(ctx, u)
 }
 
-func (svc *UserService) Login(ctx context.Context, user domain.User) (domain.User, error) {
+func (svc *userService) Login(ctx context.Context, user domain.User) (domain.User, error) {
 	userByEmail, err := svc.repo.FindByEmail(ctx, user.Email)
 	if errors.Is(err, repository.ErrUserNotFound) {
 		return domain.User{}, ErrInvalidUserOrPassword
@@ -47,7 +55,7 @@ func (svc *UserService) Login(ctx context.Context, user domain.User) (domain.Use
 
 }
 
-func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
+func (svc *userService) Profile(ctx context.Context, id int64) (domain.User, error) {
 	user, err := svc.repo.FindByID(ctx, id)
 	if err != nil {
 		return domain.User{}, err
