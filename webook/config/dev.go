@@ -1,6 +1,6 @@
 //go:build !k8s
 
-// 不使用k8s这个编译标签
+// Package config 不使用k8s这个编译标签
 package config
 
 var Config = config{

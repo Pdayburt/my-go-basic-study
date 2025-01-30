@@ -6,13 +6,14 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	jwt "github.com/golang-jwt/jwt/v5"
+	"go.uber.org/zap"
 	"log"
 	"my-go-basic-study/webook/internal/domain"
 	"my-go-basic-study/webook/internal/service"
 	"net/http"
 )
 
-var _ handler = &UserHandler{}
+var _ handler = (*UserHandler)(nil)
 
 type UserHandler struct {
 	svc                service.UserService
@@ -33,7 +34,6 @@ func NewUserHandler(svc service.UserService) *UserHandler {
 		emailExpression:    emailExpression,
 		passwordExpression: passwordExpression,
 	}
-
 }
 
 func (u *UserHandler) RegisterRouters(server *gin.Engine) {
@@ -57,6 +57,7 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	}
 	var req LoginReq
 	if err := ctx.Bind(&req); err != nil {
+		zap.L().Error("参数绑定失败", zap.Error(err))
 		return
 	}
 	loginUser, err := u.svc.Login(ctx, domain.User{

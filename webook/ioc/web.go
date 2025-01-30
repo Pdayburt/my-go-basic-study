@@ -9,9 +9,10 @@ import (
 	"time"
 )
 
-func InitGin(handler *web.UserHandler, handlers []gin.HandlerFunc) *gin.Engine {
+func InitGin(userHandler *web.UserHandler, articleHandler *web.ArticleHandler, handlers []gin.HandlerFunc) *gin.Engine {
 	server := gin.Default()
-	handler.RegisterRouters(server)
+	userHandler.RegisterRouters(server)
+	articleHandler.RegisterRouters(server)
 	server.Use(handlers...)
 	return server
 }

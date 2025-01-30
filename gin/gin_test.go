@@ -27,7 +27,6 @@ func TestGin(t *testing.T) {
 	server.GET("/view/*.html", func(ctx *gin.Context) {
 		page := ctx.Param(".html")
 		ctx.String(http.StatusOK, "hello 这是通配符路由 :"+page)
-
 	})
 
 	server.POST("/post", func(ctx *gin.Context) {
