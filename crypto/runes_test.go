@@ -16,9 +16,6 @@ import (
 	"testing"
 )
 
-// AddressType represents different Bitcoin address types
-type AddressType int
-
 // NetworkType represents the Bitcoin network type
 type NetworkType string
 
@@ -34,27 +31,8 @@ type UnspentOutput struct {
 	Satoshis     int64
 	ScriptPubKey string
 	PubKey       string
-	AddressType  AddressType
-	Inscriptions []Inscription
-	Atomicals    []Atomical
 	Runes        []Rune
 	RawTx        string
-}
-
-// Inscription represents an inscription on a UTXO
-type Inscription struct {
-	InscriptionID     string
-	InscriptionNumber int64
-	Offset            int64
-}
-
-// Atomical represents an Atomical on a UTXO
-type Atomical struct {
-	AtomicalID     string
-	AtomicalNumber int64
-	Type           string // "FT" or "NFT"
-	Ticker         string
-	AtomicalValue  int64
 }
 
 // Rune represents a Rune on a UTXO
@@ -72,11 +50,12 @@ type RuneTransferParams struct {
 	ToAddress    string
 	NetworkType  NetworkType
 	RuneID       string
-	RuneAmount   string
-	OutputValue  int64
-	FeeRate      int64
-	EnableRBF    bool
-	PrivateKey   string
+	//RuneAmount   int64
+	RuneAmount  string
+	OutputValue int64
+	FeeRate     int64
+	EnableRBF   bool
+	PrivateKey  string
 }
 
 // ToSignInput represents an input that needs to be signed
@@ -97,46 +76,48 @@ func EncodeVarInt(n *big.Int, buf *bytes.Buffer) {
 	}
 	buf.WriteByte(byte(n.Int64()))
 }
+
 func TestRunesTransfer(t *testing.T) {
 
 	asseUtxo := []UnspentOutput{
 		{
-			TxID:         "c7c49fce8facb992b381a22c980e486ebec9d089c83f1a36387368783e01848e",
+			TxID:         "1d412e9c89d18c99a66c2e821f62043614534d4d37348863afeaefe4fbde2f8a",
 			Vout:         1,
 			Satoshis:     546,
 			ScriptPubKey: "5120a3e8a12e63e9df54000c6dc5113fc8bfea2d0c1a3206e799c25279b1f880153e",
 			Runes: []Rune{
 				{
-					RuneID: "2584592:58",
-					Amount: "100000000",
+					RuneID: "3772962:2105",
+					Amount: "99999999999999999999999999",
 				},
 			},
 		},
 	}
 	btcUTXO := []UnspentOutput{
 		{
-			TxID:         "3d32c14fdd7536fd92464dd96ef1f2b6a37f3914b02530ecccaeee6f58336414",
+			//7582627fb9cdbbb8521628acafc78f943fdf0e601cbbd6d526b77a41bbb3d918
+			TxID:         "38c0e03e199d076c3ebb0f674ee708c7ea4ab4a023f4fe8a0f1d0854ebe5a952",
 			Vout:         3,
-			Satoshis:     2596283,
+			Satoshis:     606659,
 			ScriptPubKey: "5120a3e8a12e63e9df54000c6dc5113fc8bfea2d0c1a3206e799c25279b1f880153e",
 		},
 	}
 
-	rnTrfansferParam := RuneTransferParams{
+	runeTransferParam := RuneTransferParams{
 		AssetUTXOs:   asseUtxo,
 		BTCUTXOs:     btcUTXO,
 		AssetAddress: "tb1p5052ztnra804gqqvdhz3z07ghl4z6rq6xgrw0xwz2fumr7yqz5lqjkwgzs",
 		BTCAddress:   "tb1p5052ztnra804gqqvdhz3z07ghl4z6rq6xgrw0xwz2fumr7yqz5lqjkwgzs",
 		ToAddress:    "tb1pva2w66x5r3jcq6t5a86kldyjgysuggtcek3mdzr7gauv4hhzfctszdc0mt",
 		NetworkType:  "testnet3",
-		RuneID:       "2584592:58",
-		RuneAmount:   "50000000",
+		RuneID:       "3772962:2105",
+		RuneAmount:   "112345",
 		OutputValue:  546,
-		FeeRate:      3011,
+		FeeRate:      6,
 		EnableRBF:    false,
 		PrivateKey:   "5bbb59c4f0004715feab40ae9468fc52e2ac5c58462ff55a97bccb5c18ec89fb",
 	}
-	SendRunes(rnTrfansferParam)
+	SendRunes(runeTransferParam)
 
 }
 
@@ -200,7 +181,6 @@ func SendRunes(params RuneTransferParams) {
 	EncodeVarInt(big.NewInt(0), &payload) // Version
 
 	// Parse RuneID
-	//	runeBlock, runeTx := ParseRuneID(params.RuneID)
 	runeData := strings.Split(params.RuneID, ":")
 	runeBlock, _ := strconv.ParseInt(runeData[0], 10, 64)
 	runeTx, _ := strconv.ParseInt(runeData[1], 10, 64)

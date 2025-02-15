@@ -11,6 +11,7 @@ type ArticleService interface {
 	Save(ctx context.Context, article domain.Article) (int64, error)
 	Publish(ctx context.Context, article domain.Article) (int64, error)
 	PublishV1(ctx context.Context, article domain.Article) (int64, error)
+	Withdraw(ctx context.Context, article domain.Article) error
 }
 
 type articleService struct {
@@ -18,6 +19,11 @@ type articleService struct {
 	//V1
 	author article.ArticleAuthorRepository
 	reader article.ArticleReaderRepository
+}
+
+func (a *articleService) Withdraw(ctx context.Context, article domain.Article) error {
+
+	return a.repo.StatusSync(ctx, article.Id, article.Author.Id, domain.ArticleStatusPrivate)
 }
 
 /*func NewArticleService(repo article.ArticleRepository) ArticleService {
@@ -44,11 +50,12 @@ func (a *articleService) PublishV1(ctx context.Context, article domain.Article) 
 }
 
 func (a *articleService) Publish(ctx context.Context, article domain.Article) (int64, error) {
-
+	article.Status = domain.ArticleStatusPublished
 	return a.repo.Sync(ctx, article)
 }
 
 func (a *articleService) Save(ctx context.Context, article domain.Article) (int64, error) {
+	article.Status = domain.ArticleStatusPublished
 	if article.Id > 0 {
 		err := a.repo.Update(ctx, article)
 		return article.Id, err

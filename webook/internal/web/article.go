@@ -11,12 +11,14 @@ import (
 var _ handler = (*ArticleHandler)(nil)
 
 type ArticleHandler struct {
-	svc service.ArticleService
+	svc     service.ArticleService
+	intrSvc service.InteractiveService
 }
 
-func NewArticleHandler(svc service.ArticleService) *ArticleHandler {
+func NewArticleHandler(svc service.ArticleService, intrSvc service.InteractiveService) *ArticleHandler {
 	return &ArticleHandler{
-		svc: svc,
+		svc:     svc,
+		intrSvc: intrSvc,
 	}
 }
 
@@ -24,6 +26,34 @@ func (a *ArticleHandler) RegisterRouters(server *gin.Engine) {
 	articleGroup := server.Group("/articles")
 	articleGroup.POST("/edit", a.Edit)
 	articleGroup.POST("/publish", a.Publish)
+	articleGroup.POST("/withdraw", a.withdraw)
+}
+
+func (a *ArticleHandler) withdraw(ctx *gin.Context) {
+	type Req struct {
+		Id int64 `json:"id"`
+	}
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	err := a.svc.Withdraw(ctx, domain.Article{
+		Id: req.Id,
+		Author: domain.Author{
+			Id: 1,
+		},
+	})
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result[int64]{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		return
+	}
+	ctx.JSON(http.StatusOK, Result[int64]{
+		Msg:  "OK",
+		Data: req.Id,
+	})
 }
 
 func (a *ArticleHandler) Edit(ctx *gin.Context) {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"my-go-basic-study/webook/internal/domain"
 	"my-go-basic-study/webook/internal/repository/dao"
-	"my-go-basic-study/webook/internal/repository/dao/article"
 )
 
 type ArticleRepository interface {
@@ -12,21 +11,24 @@ type ArticleRepository interface {
 	Update(ctx context.Context, article domain.Article) error
 	FindById(ctx context.Context, id int64) (domain.Article, error)
 	Sync(ctx context.Context, art domain.Article) (int64, error)
+	StatusSync(ctx context.Context, id int64, authorId int64, status domain.ArticleStatus) error
 }
 
 type CachedArticleRepository struct {
-	dao       dao.ArticleDao
-	readerDao article.ReaderDAO
-	authorDao article.AuthorDAO
+	dao dao.ArticleDao
+	/*	readerDao dao.ReaderDAO
+		authorDao dao.AuthorDAO*/
+}
+
+func (c *CachedArticleRepository) StatusSync(ctx context.Context, id int64, authorId int64, status domain.ArticleStatus) error {
+
+	//return c.dao.StatusSync(ctx, id, authorId, uint8(status))pa
+	panic("implement me")
 }
 
 func (c *CachedArticleRepository) Sync(ctx context.Context, art domain.Article) (int64, error) {
-	//v1 操作两个DAO
-	var (
-		id  = art.Id
-		err error
-	)
-	
+	//return c.dao.Sync(ctx, art)
+	panic("implement me")
 }
 
 func (c *CachedArticleRepository) FindById(ctx context.Context, id int64) (domain.Article, error) {

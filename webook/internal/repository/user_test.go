@@ -3,8 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
 	"my-go-basic-study/webook/internal/domain"
 	"my-go-basic-study/webook/internal/repository/cache"
 	cachemock "my-go-basic-study/webook/internal/repository/cache/mock"
