@@ -26,7 +26,7 @@ func (status *ArticleStatus) String() string {
 	case ArticleStatusPrivate:
 		return "Private"
 	default:
-		return "Unknown"
+		return "UNKNOWN"
 	}
 }
 

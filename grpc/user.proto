@@ -1,0 +1,40 @@
+syntax = 'proto3';
+
+option go_package = "my-go-basic-study/grpc/userService";
+
+message User {
+    int64 id = 1;
+    string name = 2;
+    //可以不连续
+    string avatar = 4;
+    map<string, string > attributes = 6;
+    Address address = 8;
+    repeated string nicknames = 9;
+}
+
+message Address {
+
+}
+
+enum Gender {
+    UNKNOWN = 0;
+    MALE = 1;
+    FEMALE = 2;
+}
+
+service UserService {
+    rpc GetById (GetByIdReq) returns (GetByIdResp);
+    rpc GetByIdv2 (GetByIdReq) returns (GetByIdResp);
+}
+
+message GetByIdReq {
+    int64 id = 1;
+}
+message GetByIdResp {
+    User user = 1;
+}
+
+
+
+
+

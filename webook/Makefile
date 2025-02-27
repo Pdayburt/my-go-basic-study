@@ -5,3 +5,6 @@ docker:
 	@docker rmi noah/webook:v0.0.1 || true
 	@docker build -t noah/webook:v0.0.1 .
 
+.PHONY: grpc
+grpc:
+	@buf generate webook/api/proto
